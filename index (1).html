@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Pitchside — a GenAI-powered stadium companion for FIFA World Cup 2026, covering navigation, accessibility, transport, crowd management, sustainability, and staff operations.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://api.anthropic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src https://api.anthropic.com; img-src 'self' data:;">
+<title>Pitchside — Stadium Companion for FIFA World Cup 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0A0F1C;
+    --surface: #121A2B;
+    --surface-2: #1B2540;
+    --gold: #F2C94C;
+    --teal: #2DD4BF;
+    --text: #F4F6F8;
+    --muted: #8B94A3;
+    --line: rgba(244,246,248,0.09);
+    --danger: #FF6B6B;
+    --ok: #6EE7A8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(45,212,191,0.12), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 90% 0%, rgba(242,201,76,0.10), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+  }
+  ::selection{background:var(--teal); color:#04140F;}
+
+  a{color:var(--teal);}
+
+  .skip-link{
+    position:absolute; left:-999px; top:auto;
+    background:var(--gold); color:#231A02; padding:10px 16px;
+    border-radius:0 0 8px 0; z-index:100; font-weight:700;
+  }
+  .skip-link:focus{left:0; top:0;}
+
+  :focus-visible{
+    outline:2px solid var(--teal);
+    outline-offset:2px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+
+  .wrap{max-width:960px; margin:0 auto; padding:0 20px;}
+
+  /* ---------- Top ticker ---------- */
+  .ticker{
+    background:var(--surface-2);
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+    white-space:nowrap;
+    padding:8px 0;
+  }
+  .ticker span{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.06em;
+    color:var(--teal);
+    display:inline-block;
+    padding-left:100%;
+    animation: scroll 22s linear infinite;
+  }
+  @keyframes scroll{
+    0%{transform:translateX(0);}
+    100%{transform:translateX(-100%);}
+  }
+
+  /* ---------- Hero ---------- */
+  header.hero{
+    padding:56px 0 32px;
+    position:relative;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--gold);
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    display:flex; align-items:center; gap:8px;
+    margin-bottom:18px;
+  }
+  .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--danger);
+    box-shadow:0 0 0 0 rgba(255,107,107,0.7);
+    animation:pulse 1.6s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(255,107,107,0.55);}
+    70%{box-shadow:0 0 0 9px rgba(255,107,107,0);}
+    100%{box-shadow:0 0 0 0 rgba(255,107,107,0);}
+  }
+  h1{
+    font-family:'Anton', sans-serif;
+    font-weight:400;
+    font-size:clamp(40px, 7vw, 72px);
+    line-height:0.98;
+    margin:0 0 16px;
+    letter-spacing:0.01em;
+  }
+  h1 .accent{color:var(--gold);}
+  .sub{
+    color:var(--muted);
+    font-size:16px;
+    max-width:600px;
+    line-height:1.55;
+    margin:0 0 28px;
+  }
+
+  .floodlights{
+    position:absolute;
+    top:0; right:0; bottom:0; left:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:0;
+  }
+  .beam{
+    position:absolute;
+    top:-200px; right:10%;
+    width:300px; height:600px;
+    background:linear-gradient(180deg, rgba(242,201,76,0.14), transparent 70%);
+    transform-origin:top center;
+    animation:sweep 8s ease-in-out infinite;
+  }
+  @keyframes sweep{
+    0%,100%{transform:rotate(8deg);}
+    50%{transform:rotate(-6deg);}
+  }
+  header.hero .wrap{position:relative; z-index:1;}
+
+  /* ---------- Mode switch (Fan / Staff) ---------- */
+  .mode-switch{
+    display:inline-flex;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:100px;
+    padding:4px;
+    margin-bottom:24px;
+    gap:4px;
+  }
+  .mode-btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    padding:9px 18px;
+    border-radius:100px;
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    cursor:pointer;
+  }
+  .mode-btn.active{
+    background:var(--gold);
+    color:#231A02;
+  }
+  .mode-btn:hover:not(.active){color:var(--text);}
+
+  /* ---------- Language pills ---------- */
+  .langs{
+    display:flex; flex-wrap:wrap; gap:8px;
+    margin-bottom:8px;
+  }
+  .lang-pill{
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    padding:8px 14px;
+    border-radius:100px;
+    border:1px solid var(--line);
+    background:var(--surface);
+    color:var(--muted);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .lang-pill:hover{border-color:var(--teal); color:var(--text);}
+  .lang-pill.active{
+    background:var(--teal);
+    color:#04140F;
+    border-color:var(--teal);
+    font-weight:700;
+  }
+
+  /* ---------- Setup card (API key) ---------- */
+  .setup{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px 22px;
+    margin:28px 0;
+  }
+  .setup h3{
+    margin:0 0 6px;
+    font-size:15px;
+    font-weight:700;
+  }
+  .setup p{
+    margin:0 0 14px;
+    color:var(--muted);
+    font-size:13.5px;
+    line-height:1.5;
+  }
+  .setup-row{display:flex; gap:10px; flex-wrap:wrap;}
+  label.field-label{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:6px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  input[type="password"], input[type="text"]{
+    flex:1;
+    min-width:220px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--text);
+    padding:11px 12px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+  }
+  input:focus{outline:2px solid var(--teal); outline-offset:1px;}
+  .btn{
+    background:var(--gold);
+    color:#231A02;
+    border:none;
+    border-radius:8px;
+    padding:11px 20px;
+    font-weight:700;
+    font-size:13.5px;
+    cursor:pointer;
+    font-family:'IBM Plex Sans', sans-serif;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn.secondary{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text);
+  }
+  .status-line{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    margin-top:10px;
+    color:var(--muted);
+  }
+  .status-line.ok{color:var(--teal);}
+  .status-line.err{color:var(--danger);}
+
+  /* ---------- Category chips ---------- */
+  .cats{
+    display:flex; flex-wrap:wrap; gap:8px;
+    margin:20px 0 0;
+  }
+  .cat-chip{
+    font-size:12.5px;
+    padding:7px 12px;
+    border-radius:8px;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    cursor:pointer;
+  }
+  .cat-chip:hover{border-color:var(--gold);}
+
+  /* ---------- Scoreboard / chat panel ---------- */
+  .board{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:16px;
+    margin:26px 0 40px;
+    overflow:hidden;
+  }
+  .board-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px;
+    background:var(--surface-2);
+    border-bottom:1px solid var(--line);
+  }
+  .board-head .name{
+    font-family:'Anton', sans-serif;
+    font-size:18px;
+    letter-spacing:0.02em;
+  }
+  .board-head .name span{color:var(--gold);}
+  .clock{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--muted);
+  }
+  .chat{
+    height:420px;
+    overflow-y:auto;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .msg{
+    max-width:78%;
+    padding:12px 14px;
+    border-radius:12px;
+    font-size:14.5px;
+    line-height:1.55;
+    white-space:pre-wrap;
+  }
+  .msg.bot{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    align-self:flex-start;
+    border-top-left-radius:2px;
+  }
+  .msg.user{
+    background:var(--teal);
+    color:#04140F;
+    align-self:flex-end;
+    border-top-right-radius:2px;
+    font-weight:500;
+  }
+  .msg.bot b{color:var(--gold);}
+  .typing{
+    align-self:flex-start;
+    color:var(--muted);
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+  }
+  .composer{
+    display:flex; gap:10px;
+    padding:16px 18px;
+    border-top:1px solid var(--line);
+    background:var(--surface-2);
+  }
+  .composer input{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+  }
+
+  /* ---------- Ops dashboard (staff mode) ---------- */
+  .ops-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    gap:14px;
+    padding:20px;
+  }
+  .ops-card{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px;
+  }
+  .ops-card h4{
+    margin:0 0 10px;
+    font-size:12.5px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--muted);
+    display:flex; align-items:center; gap:6px;
+  }
+  .gate-row{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:13.5px; padding:6px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .gate-row:last-child{border-bottom:none;}
+  .badge{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    padding:2px 8px;
+    border-radius:100px;
+    font-weight:700;
+  }
+  .badge.low{background:rgba(110,231,168,0.15); color:var(--ok);}
+  .badge.mid{background:rgba(242,201,76,0.15); color:var(--gold);}
+  .badge.high{background:rgba(255,107,107,0.15); color:var(--danger);}
+  .big-stat{
+    font-family:'Anton', sans-serif;
+    font-size:34px;
+    color:var(--teal);
+    line-height:1;
+  }
+  .stat-label{
+    font-size:12px; color:var(--muted); margin-top:4px;
+  }
+  .alert-box{
+    background:rgba(255,107,107,0.08);
+    border:1px solid rgba(255,107,107,0.35);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:13px;
+    line-height:1.5;
+  }
+  .alert-box b{color:var(--danger);}
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:12px;
+    padding:0 0 40px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  @media (max-width:560px){
+    .msg{max-width:90%;}
+    .chat{height:360px;}
+  }
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="ticker" role="marquee" aria-label="Live stadium updates"><span>MATCH DAY OPERATIONS &nbsp;•&nbsp; GATE C — LOW CONGESTION &nbsp;•&nbsp; SHUTTLE LINE 4 — 6 MIN &nbsp;•&nbsp; ACCESSIBLE ENTRY — GATE A &nbsp;•&nbsp; WATER STATIONS — SECTIONS 102, 118, 204 &nbsp;•&nbsp; MULTILINGUAL SUPPORT — LIVE &nbsp;•&nbsp; </span></div>
+
+<header class="hero">
+  <div class="floodlights" aria-hidden="true"><div class="beam"></div></div>
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot" aria-hidden="true"></span> LIVE AT THE STADIUM · FIFA WORLD CUP 2026</div>
+    <h1>PITCH<span class="accent">SIDE</span></h1>
+    <p class="sub">A GenAI companion for match day — navigation, accessibility, transport, crowd guidance, sustainability, and live operational intelligence for staff.</p>
+
+    <div class="mode-switch" role="tablist" aria-label="Choose experience">
+      <button class="mode-btn active" role="tab" aria-selected="true" id="tabFan" data-mode="fan">👤 Fan Assistant</button>
+      <button class="mode-btn" role="tab" aria-selected="false" id="tabStaff" data-mode="staff">🛠️ Staff Operations</button>
+    </div>
+
+    <div class="langs" id="langPills" role="group" aria-label="Choose response language">
+      <button class="lang-pill active" data-lang="English">English</button>
+      <button class="lang-pill" data-lang="Español">Español</button>
+      <button class="lang-pill" data-lang="Français">Français</button>
+      <button class="lang-pill" data-lang="Português">Português</button>
+      <button class="lang-pill" data-lang="العربية">العربية</button>
+      <button class="lang-pill" data-lang="हिन्दी">हिन्दी</button>
+    </div>
+
+    <div class="setup" id="setupCard">
+      <h3>Connect your assistant</h3>
+      <p>Enter an Anthropic API key to power live answers. Get one free at <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>. Your key is stored only in your own browser's session and is sent directly to Anthropic's API over HTTPS — never to any third-party server.</p>
+      <label class="field-label" for="apiKey">Anthropic API key</label>
+      <div class="setup-row">
+        <input type="password" id="apiKey" autocomplete="off" placeholder="sk-ant-..." maxlength="200">
+        <button class="btn" id="saveKey" type="button">Connect</button>
+        <button class="btn secondary" id="clearKey" type="button">Clear</button>
+      </div>
+      <div class="status-line" id="keyStatus" role="status">Not connected yet.</div>
+    </div>
+
+    <div class="cats" id="cats" role="group" aria-label="Quick questions">
+      <button class="cat-chip" data-q="How do I get from Gate B to Section 214, and is it wheelchair accessible?">🧭 Navigation</button>
+      <button class="cat-chip" data-q="Which gates have the shortest lines right now and how should crowds be routed?">👥 Crowd management</button>
+      <button class="cat-chip" data-q="What accessibility services are available for a fan using a wheelchair?">♿ Accessibility</button>
+      <button class="cat-chip" data-q="What's the fastest way to get to the stadium by public transport and where do I park?">🚌 Transport</button>
+      <button class="cat-chip" data-q="What sustainability initiatives are in place at the stadium today?">🌱 Sustainability</button>
+      <button class="cat-chip" data-q="There's a medical situation in Section 118, what should staff do immediately?">🚨 Ops & real-time decisions</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+
+  <!-- FAN MODE -->
+  <div class="board" id="fanBoard">
+    <div class="board-head">
+      <div class="name">STADIUM <span>ASSISTANT</span></div>
+      <div class="clock" id="clock" aria-live="off">--:--:--</div>
+    </div>
+    <div class="chat" id="chat" role="log" aria-live="polite" aria-label="Conversation with stadium assistant">
+      <div class="msg bot">👋 <b>Welcome to Pitchside.</b> Connect your API key above, then ask me anything about today's match — navigation, accessibility, transport, crowd flow, or sustainability. I'll answer in whichever language you pick.</div>
+    </div>
+    <form class="composer" id="composerForm">
+      <label class="visually-hidden" for="userInput" style="position:absolute; left:-9999px;">Ask the stadium assistant a question</label>
+      <input type="text" id="userInput" placeholder="Ask about gates, seating, transport, accessibility...">
+      <button class="btn" id="sendBtn" type="submit">Send</button>
+    </form>
+  </div>
+
+  <!-- STAFF MODE -->
+  <div class="board" id="staffBoard" style="display:none;">
+    <div class="board-head">
+      <div class="name">OPERATIONS <span>DASHBOARD</span></div>
+      <div class="clock" id="clock2" aria-live="off">--:--:--</div>
+    </div>
+    <div class="ops-grid">
+      <div class="ops-card">
+        <h4>🚦 Gate congestion</h4>
+        <div class="gate-row"><span>Gate A (Accessible)</span><span class="badge low">LOW</span></div>
+        <div class="gate-row"><span>Gate B</span><span class="badge mid">MODERATE</span></div>
+        <div class="gate-row"><span>Gate C</span><span class="badge low">LOW</span></div>
+        <div class="gate-row"><span>Gate D</span><span class="badge high">HIGH</span></div>
+      </div>
+      <div class="ops-card">
+        <h4>👥 Crowd density</h4>
+        <div class="big-stat">62%</div>
+        <div class="stat-label">Average concourse capacity — AI suggests opening overflow route via Gate C</div>
+      </div>
+      <div class="ops-card">
+        <h4>🌱 Sustainability</h4>
+        <div class="gate-row"><span>Waste diverted from landfill</span><span class="badge low">78%</span></div>
+        <div class="gate-row"><span>Renewable energy share</span><span class="badge low">64%</span></div>
+        <div class="gate-row"><span>Reusable cup return rate</span><span class="badge mid">51%</span></div>
+      </div>
+      <div class="ops-card">
+        <h4>🚨 Live alert</h4>
+        <div class="alert-box"><b>Section 118:</b> Medical assist requested. Nearest first-aid post is 40m from Section 118, Gate C side. Recommend routing volunteer team via the concourse, not the stands, to avoid crowd delay.</div>
+      </div>
+      <div class="ops-card">
+        <h4>🚌 Transport status</h4>
+        <div class="gate-row"><span>Shuttle Line 2</span><span class="badge low">On time</span></div>
+        <div class="gate-row"><span>Shuttle Line 4</span><span class="badge mid">6 min delay</span></div>
+        <div class="gate-row"><span>Metro connection</span><span class="badge low">Normal</span></div>
+      </div>
+      <div class="ops-card">
+        <h4>🌍 Multilingual requests (last hour)</h4>
+        <div class="gate-row"><span>Spanish</span><span class="badge low">38%</span></div>
+        <div class="gate-row"><span>English</span><span class="badge low">31%</span></div>
+        <div class="gate-row"><span>Portuguese</span><span class="badge mid">14%</span></div>
+        <div class="gate-row"><span>Other</span><span class="badge mid">17%</span></div>
+      </div>
+    </div>
+    <p style="padding:0 20px 20px; color:var(--muted); font-size:12.5px; line-height:1.5;">This dashboard illustrates the kind of real-time operational intelligence Pitchside surfaces for venue staff. In a production deployment, these values would be wired to live sensors, ticketing systems, and IoT crowd counters rather than the demo figures shown here.</p>
+  </div>
+
+</main>
+
+<footer>PITCHSIDE — Built for PromptWars Virtual · Challenge 4: Smart Stadiums &amp; Tournament Operations</footer>
+
+<script>
+  let currentLang = "English";
+  let currentMode = "fan";
+  let apiKey = sessionStorage.getItem("pitchside_key") || "";
+
+  const keyStatus = document.getElementById("keyStatus");
+  const apiKeyInput = document.getElementById("apiKey");
+
+  function refreshKeyStatus(){
+    if(apiKey){
+      apiKeyInput.value = apiKey;
+      keyStatus.textContent = "✓ Connected — assistant is live.";
+      keyStatus.className = "status-line ok";
+    } else {
+      keyStatus.textContent = "Not connected yet.";
+      keyStatus.className = "status-line";
+    }
+  }
+  refreshKeyStatus();
+
+  function isLikelyValidKey(k){
+    // Basic client-side sanity check only — real validation happens via the API call itself.
+    return typeof k === "string" && k.length > 10 && k.length < 200 && !/\s/.test(k);
+  }
+
+  document.getElementById("saveKey").addEventListener("click", () => {
+    const val = apiKeyInput.value.trim();
+    if(!isLikelyValidKey(val)){
+      keyStatus.textContent = "That doesn't look like a valid API key. Please check and try again.";
+      keyStatus.className = "status-line err";
+      return;
+    }
+    apiKey = val;
+    sessionStorage.setItem("pitchside_key", apiKey);
+    refreshKeyStatus();
+  });
+
+  document.getElementById("clearKey").addEventListener("click", () => {
+    apiKey = "";
+    sessionStorage.removeItem("pitchside_key");
+    apiKeyInput.value = "";
+    refreshKeyStatus();
+  });
+
+  // Mode switch (Fan / Staff)
+  const tabFan = document.getElementById("tabFan");
+  const tabStaff = document.getElementById("tabStaff");
+  const fanBoard = document.getElementById("fanBoard");
+  const staffBoard = document.getElementById("staffBoard");
+
+  function setMode(mode){
+    currentMode = mode;
+    const isFan = mode === "fan";
+    fanBoard.style.display = isFan ? "" : "none";
+    staffBoard.style.display = isFan ? "none" : "";
+    tabFan.classList.toggle("active", isFan);
+    tabStaff.classList.toggle("active", !isFan);
+    tabFan.setAttribute("aria-selected", String(isFan));
+    tabStaff.setAttribute("aria-selected", String(!isFan));
+  }
+  tabFan.addEventListener("click", () => setMode("fan"));
+  tabStaff.addEventListener("click", () => setMode("staff"));
+
+  // Language pills
+  document.getElementById("langPills").addEventListener("click", (e) => {
+    const btn = e.target.closest(".lang-pill");
+    if(!btn) return;
+    document.querySelectorAll(".lang-pill").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentLang = btn.dataset.lang;
+  });
+
+  // Category quick-asks
+  document.getElementById("cats").addEventListener("click", (e) => {
+    const chip = e.target.closest(".cat-chip");
+    if(!chip) return;
+    setMode("fan");
+    document.getElementById("userInput").value = chip.dataset.q;
+    sendMessage();
+  });
+
+  // Clock(s)
+  function tickClock(){
+    const t = new Date().toLocaleTimeString();
+    document.getElementById("clock").textContent = t;
+    const c2 = document.getElementById("clock2");
+    if(c2) c2.textContent = t;
+  }
+  setInterval(tickClock, 1000);
+  tickClock();
+
+  const chat = document.getElementById("chat");
+  function addMessage(text, who){
+    const div = document.createElement("div");
+    div.className = "msg " + who;
+    div.textContent = text; // textContent (not innerHTML) prevents script/HTML injection from user or API output
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  const SYSTEM_PROMPT = `You are Pitchside, an on-site GenAI assistant for fans, organizers, volunteers, and venue staff during the FIFA World Cup 2026. You help with:
+- Navigation inside and around the stadium
+- Crowd management and congestion guidance
+- Accessibility support for fans with disabilities
+- Transportation and parking guidance
+- Sustainability practices at the venue
+- Multilingual assistance
+- Operational intelligence and real-time decision support for staff
+
+Always answer helpfully, concretely, and briefly (3-6 sentences or a short list). Invent specific, plausible stadium details (gate letters, section numbers, shuttle lines, timings) when needed to make the answer concrete and useful, since this is a demo scenario, not a live feed. Never say you lack real-time data — instead give a confident, realistic, specific answer in the spirit of the demo.
+Respond ONLY in this language: `;
+
+  const MAX_INPUT_LENGTH = 400;
+
+  async function callClaude(userText){
+    const body = {
+      model: "claude-sonnet-4-6",
+      max_tokens: 400,
+      system: SYSTEM_PROMPT + currentLang,
+      messages: [{ role: "user", content: userText }]
+    };
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify(body)
+    });
+    if(!res.ok){
+      const errText = await res.text();
+      throw new Error("API error " + res.status + ": " + errText.slice(0, 200));
+    }
+    const data = await res.json();
+    return data.content.map(b => b.text || "").join("\n").trim();
+  }
+
+  async function sendMessage(){
+    const input = document.getElementById("userInput");
+    let text = input.value.trim();
+    if(!text) return;
+    if(text.length > MAX_INPUT_LENGTH){
+      text = text.slice(0, MAX_INPUT_LENGTH);
+    }
+
+    if(!apiKey){
+      addMessage("⚠ Connect an API key above first, then ask me anything.", "bot");
+      return;
+    }
+
+    addMessage(text, "user");
+    input.value = "";
+
+    const typingEl = document.createElement("div");
+    typingEl.className = "typing";
+    typingEl.setAttribute("aria-live", "polite");
+    typingEl.textContent = "Pitchside is thinking...";
+    chat.appendChild(typingEl);
+    chat.scrollTop = chat.scrollHeight;
+
+    try{
+      const reply = await callClaude(text);
+      typingEl.remove();
+      addMessage(reply, "bot");
+    } catch(err){
+      typingEl.remove();
+      addMessage("Something went wrong reaching the assistant: " + err.message, "bot");
+    }
+  }
+
+  document.getElementById("composerForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
+
+  /* ------------------------------------------------------------------
+     Lightweight self-tests (run automatically in the browser console).
+     These are basic sanity checks for pure helper functions, documented
+     further in tests/README.md, and are intentionally dependency-free
+     so they run with zero setup in any browser.
+  ------------------------------------------------------------------ */
+  function runSelfTests(){
+    const results = [];
+    function assert(name, cond){ results.push({name, pass: !!cond}); }
+
+    assert("isLikelyValidKey rejects empty string", isLikelyValidKey("") === false);
+    assert("isLikelyValidKey rejects short string", isLikelyValidKey("abc") === false);
+    assert("isLikelyValidKey rejects string with whitespace", isLikelyValidKey("sk-ant valid key") === false);
+    assert("isLikelyValidKey accepts plausible key", isLikelyValidKey("sk-ant-" + "a".repeat(40)) === true);
+    assert("MAX_INPUT_LENGTH is a sane positive number", MAX_INPUT_LENGTH > 0 && MAX_INPUT_LENGTH < 5000);
+
+    const passed = results.filter(r => r.pass).length;
+    console.log(`Pitchside self-tests: ${passed}/${results.length} passed`);
+    results.forEach(r => console.log(`  ${r.pass ? "✓" : "✗"} ${r.name}`));
+    return results;
+  }
+  runSelfTests();
+</script>
+
+</body>
+</html>
